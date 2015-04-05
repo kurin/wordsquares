@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"regexp"
@@ -11,9 +12,15 @@ import (
 
 var matcher = regexp.MustCompile("^[a-z]*$")
 
+var (
+	size = flag.Int("size", 2, "the word size to use")
+	word = flag.String("word", "", "the word to start with")
+	dict = flag.String("dictionary", "/usr/share/dict/words", "the dictionary to use")
+)
+
 func wordList(size int) ([]string, error) {
 	var wl []string
-	f, err := os.Open("/usr/share/dict/words")
+	f, err := os.Open(*dict)
 	if err != nil {
 		return nil, err
 	}
@@ -28,44 +35,52 @@ func wordList(size int) ([]string, error) {
 	return wl, scanner.Err()
 }
 
-func makeSquare(words []string, t *trie.Trie) []string {
+func makeSquare(words []string, t *trie.Trie) [][]string {
 	c := len(words)
 	if c == 0 {
 		return nil
 	}
 
 	s := len(words[0])
-	b := make([]byte, c)
+	pfx := make([]byte, c)
 	for i := 0; i < s; i++ {
 		for j := 0; j < c; j++ {
-			b[j] = words[j][i]
+			pfx[j] = words[j][i]
 		}
-		if !t.HasPrefix(string(b)) {
+		if !t.HasPrefix(string(pfx)) {
 			return nil
 		}
 	}
 
 	if s == c {
-		return words
+		rtn := make([]string, c)
+		copy(rtn, words)
+		return [][]string{rtn}
 	}
 
-	pfx := make([]byte, c)
 	for i, word := range words {
 		pfx[i] = byte(word[c])
 	}
-	tmp := make([]string, len(words)+1)
+	tmp := make([]string, c+1)
 	copy(tmp, words)
+	var all [][]string
 	for _, cand := range t.WithPrefix(string(pfx)) {
-		tmp[len(words)] = cand
-		if sq := makeSquare(tmp, t); sq != nil {
-			return sq
+		tmp[c] = cand
+		sq := makeSquare(tmp, t)
+		for _, s := range sq {
+			all = append(all, s)
 		}
 	}
-	return nil
+	return all
 }
 
 func main() {
-	wl, err := wordList(8)
+	flag.Parse()
+	size := *size
+	if *word != "" {
+		size = len(*word)
+	}
+	wl, err := wordList(size)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -75,13 +90,24 @@ func main() {
 	for _, w := range wl {
 		t.Add(w)
 	}
-	for _, w := range wl {
-		fmt.Println(w)
-		if ans := makeSquare([]string{w}, t); ans != nil {
-			for _, a := range ans {
+	if *word != "" {
+		t.Add(*word)
+		wSqs := makeSquare([]string{*word}, t)
+		for _, sq := range wSqs {
+			fmt.Println("---")
+			for _, a := range sq {
 				fmt.Println(a)
 			}
-			return
+		}
+		return
+	}
+	for _, w := range wl {
+		wSqs := makeSquare([]string{w}, t)
+		for _, sq := range wSqs {
+			fmt.Println("---")
+			for _, a := range sq {
+				fmt.Println(a)
+			}
 		}
 	}
 }

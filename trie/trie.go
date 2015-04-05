@@ -25,6 +25,7 @@ func (t *Trie) addChar(c byte) *Trie {
 	return n
 }
 
+// Add adds the string to the trie.
 func (t *Trie) Add(s string) {
 	if len(s) == 0 {
 		t.terminal = true
@@ -34,6 +35,7 @@ func (t *Trie) Add(s string) {
 	n.Add(s[1:])
 }
 
+// HasPrefix returns whether any entry in the trie has s as its prefix.
 func (t *Trie) HasPrefix(s string) bool {
 	if len(s) == 0 {
 		return true
@@ -45,6 +47,8 @@ func (t *Trie) HasPrefix(s string) bool {
 	return n.HasPrefix(s[1:])
 }
 
+// HasString returns whether the given string is in the trie as a
+// complete entry.
 func (t *Trie) HasString(s string) bool {
 	if len(s) == 0 && t.terminal {
 		return true
@@ -59,7 +63,7 @@ func (t *Trie) HasString(s string) bool {
 	return n.HasString(s[1:])
 }
 
-func (t *Trie) Substrings() []string {
+func (t *Trie) substrings() []string {
 	var strs []string
 	for _, n := range t.children {
 		for _, sstr := range n.Substrings() {
@@ -72,7 +76,7 @@ func (t *Trie) Substrings() []string {
 	return strs
 }
 
-func (t *Trie) Subtrie(s string) *Trie {
+func (t *Trie) subtrie(s string) *Trie {
 	n := t
 	for i := 0; i < len(s); i++ {
 		n = n.getNode(s[i])
@@ -83,8 +87,13 @@ func (t *Trie) Subtrie(s string) *Trie {
 	return n
 }
 
+// WithPrefix returns all entries in the trie that begin with the
+// given prefix.
 func (t *Trie) WithPrefix(s string) []string {
-	n := t.Subtrie(s)
+	if len(s) == 0 {
+		return t.substrings()
+	}
+	n := t.subtrie(s)
 	var strs []string
 	for _, str := range n.Substrings() {
 		strs = append(strs, s[:len(s)-1]+str)

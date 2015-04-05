@@ -66,7 +66,7 @@ func (t *Trie) HasString(s string) bool {
 func (t *Trie) substrings() []string {
 	var strs []string
 	for _, n := range t.children {
-		for _, sstr := range n.Substrings() {
+		for _, sstr := range n.substrings() {
 			strs = append(strs, string(t.name)+sstr)
 		}
 	}
@@ -95,7 +95,7 @@ func (t *Trie) WithPrefix(s string) []string {
 	}
 	n := t.subtrie(s)
 	var strs []string
-	for _, str := range n.Substrings() {
+	for _, str := range n.substrings() {
 		strs = append(strs, s[:len(s)-1]+str)
 	}
 	return strs

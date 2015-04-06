@@ -150,18 +150,10 @@ func main() {
 	}
 
 	if *word != "" {
-		t.Add(*word)
-		wSqs := squareFunc(t, []string{*word})
-		for _, sq := range wSqs {
-			fmt.Println("---")
-			for _, a := range sq {
-				fmt.Println(a)
-			}
-		}
-		return
+		wl = []string{*word}
 	}
+
 	for _, w := range wl {
-		fmt.Fprintln(os.Stderr, w)
 		wSqs := squareFunc(t, []string{w})
 		for _, sq := range wSqs {
 			fmt.Println("---")

@@ -13,9 +13,10 @@ import (
 var matcher = regexp.MustCompile("^[a-z]*$")
 
 var (
-	size = flag.Int("size", 2, "the word size to use")
-	word = flag.String("word", "", "the word to start with")
-	dict = flag.String("dictionary", "/usr/share/dict/words", "the dictionary to use")
+	size   = flag.Int("size", 2, "the word size to use")
+	word   = flag.String("word", "", "the word to start with")
+	dict   = flag.String("dictionary", "/usr/share/dict/words", "the dictionary to use")
+	double = flag.Bool("double", false, "make a double word square")
 )
 
 func wordList(size int) ([]string, error) {
@@ -35,7 +36,60 @@ func wordList(size int) ([]string, error) {
 	return wl, scanner.Err()
 }
 
-func makeSquare(words []string, t *trie.Trie) [][]string {
+func hasChar(s []byte, b byte) bool {
+	for _, c := range s {
+		if b == c {
+			return true
+		}
+	}
+	return false
+}
+
+func makeDoubleSquare(t *trie.Trie, words []string) [][]string {
+	c := len(words)
+	if c == 0 {
+		return nil
+	}
+	s := len(words[0])
+	if c == s {
+		rtn := make([]string, c)
+		copy(rtn, words)
+		return [][]string{rtn}
+	}
+	matcher := make([][]byte, s)
+	pfx := make([]byte, c)
+	for i := 0; i < s; i++ {
+		imatch := make([]byte, c)
+		for j := range words {
+			pfx[j] = words[j][i]
+		}
+		cands := t.WithPrefix(string(pfx))
+		for _, cand := range cands {
+			r := cand[c]
+			if !hasChar(imatch, r) {
+				imatch = append(imatch, r)
+			}
+		}
+		if len(imatch) == 0 {
+			return nil
+		}
+		matcher[i] = imatch
+	}
+	cWords := t.Matches(matcher)
+	next := make([]string, c+1)
+	copy(next, words)
+	var rtn [][]string
+	for _, word := range cWords {
+		next[c] = word
+		sqs := makeDoubleSquare(t, next)
+		for _, sq := range sqs {
+			rtn = append(rtn, sq)
+		}
+	}
+	return rtn
+}
+
+func makeSquare(t *trie.Trie, words []string) [][]string {
 	c := len(words)
 	if c == 0 {
 		return nil
@@ -66,7 +120,7 @@ func makeSquare(words []string, t *trie.Trie) [][]string {
 	var all [][]string
 	for _, cand := range t.WithPrefix(string(pfx)) {
 		tmp[c] = cand
-		sq := makeSquare(tmp, t)
+		sq := makeSquare(t, tmp)
 		for _, s := range sq {
 			all = append(all, s)
 		}
@@ -76,6 +130,10 @@ func makeSquare(words []string, t *trie.Trie) [][]string {
 
 func main() {
 	flag.Parse()
+	squareFunc := makeSquare
+	if *double {
+		squareFunc = makeDoubleSquare
+	}
 	size := *size
 	if *word != "" {
 		size = len(*word)
@@ -90,9 +148,10 @@ func main() {
 	for _, w := range wl {
 		t.Add(w)
 	}
+
 	if *word != "" {
 		t.Add(*word)
-		wSqs := makeSquare([]string{*word}, t)
+		wSqs := squareFunc(t, []string{*word})
 		for _, sq := range wSqs {
 			fmt.Println("---")
 			for _, a := range sq {
@@ -102,7 +161,8 @@ func main() {
 		return
 	}
 	for _, w := range wl {
-		wSqs := makeSquare([]string{w}, t)
+		fmt.Fprintln(os.Stderr, w)
+		wSqs := squareFunc(t, []string{w})
 		for _, sq := range wSqs {
 			fmt.Println("---")
 			for _, a := range sq {

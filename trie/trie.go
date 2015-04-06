@@ -1,13 +1,15 @@
 package trie
 
-// Trie is a radix tree.
+import "unicode/utf8"
+
+// Trie is a trie.
 type Trie struct {
-	name     byte
+	name     rune
 	terminal bool
 	children []*Trie
 }
 
-func (t *Trie) getNode(c byte) *Trie {
+func (t *Trie) getNode(c rune) *Trie {
 	for _, n := range t.children {
 		if n.name == c {
 			return n
@@ -16,7 +18,7 @@ func (t *Trie) getNode(c byte) *Trie {
 	return nil
 }
 
-func (t *Trie) addChar(c byte) *Trie {
+func (t *Trie) addChar(c rune) *Trie {
 	n := t.getNode(c)
 	if n == nil {
 		n = &Trie{name: c}
@@ -31,8 +33,8 @@ func (t *Trie) Add(s string) {
 		t.terminal = true
 		return
 	}
-	n := t.addChar(s[0])
-	n.Add(s[1:])
+	n := t.addChar([]rune(s)[0])
+	n.Add(string([]rune(s)[1:]))
 }
 
 // HasPrefix returns whether any entry in the trie has s as its prefix.
@@ -40,7 +42,7 @@ func (t *Trie) HasPrefix(s string) bool {
 	if len(s) == 0 {
 		return true
 	}
-	n := t.getNode(s[0])
+	n := t.getNode([]rune(s)[0])
 	if n == nil {
 		return false
 	}
@@ -56,7 +58,7 @@ func (t *Trie) HasString(s string) bool {
 	if len(s) == 0 {
 		return false
 	}
-	n := t.getNode(s[0])
+	n := t.getNode([]rune(s)[0])
 	if n == nil {
 		return false
 	}
@@ -78,8 +80,8 @@ func (t *Trie) substrings() []string {
 
 func (t *Trie) subtrie(s string) *Trie {
 	n := t
-	for i := 0; i < len(s); i++ {
-		n = n.getNode(s[i])
+	for i := 0; i < utf8.RuneCountInString(s); i++ {
+		n = n.getNode([]rune(s)[i])
 		if n == nil {
 			return nil
 		}

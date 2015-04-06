@@ -90,3 +90,34 @@ func TestWithPrefix(t *testing.T) {
 		}
 	}
 }
+
+func TestMatches(t *testing.T) {
+	table := []struct {
+		dict []string
+		test [][]byte
+		want []string
+	}{
+		{
+			dict: []string{"this", "that", "other", "tank", "think"},
+			test: [][]byte{
+				{'t'},
+				{'h', 'a'},
+				{'a', 'n'},
+				{'t', 'k'},
+			},
+			want: []string{"that", "tank"},
+		},
+	}
+	for _, e := range table {
+		tr := &Trie{}
+		for _, w := range e.dict {
+			tr.Add(w)
+		}
+		got := tr.Matches(e.test)
+		sort.Strings(got)
+		sort.Strings(e.want)
+		if !reflect.DeepEqual(got, e.want) {
+			t.Errorf("tr.Matches(...): got %#v, want %#v", got, e.want)
+		}
+	}
+}

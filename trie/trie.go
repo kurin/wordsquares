@@ -1,15 +1,13 @@
 package trie
 
-import "unicode/utf8"
-
-// Trie is a trie.
+// Trie is a trie.  It doesn't support unicode strings.
 type Trie struct {
-	name     rune
+	name     byte
 	terminal bool
 	children []*Trie
 }
 
-func (t *Trie) getNode(c rune) *Trie {
+func (t *Trie) getNode(c byte) *Trie {
 	for _, n := range t.children {
 		if n.name == c {
 			return n
@@ -18,7 +16,7 @@ func (t *Trie) getNode(c rune) *Trie {
 	return nil
 }
 
-func (t *Trie) addChar(c rune) *Trie {
+func (t *Trie) addChar(c byte) *Trie {
 	n := t.getNode(c)
 	if n == nil {
 		n = &Trie{name: c}
@@ -33,8 +31,8 @@ func (t *Trie) Add(s string) {
 		t.terminal = true
 		return
 	}
-	n := t.addChar([]rune(s)[0])
-	n.Add(string([]rune(s)[1:]))
+	n := t.addChar(s[0])
+	n.Add(s[1:])
 }
 
 // HasPrefix returns whether any entry in the trie has s as its prefix.
@@ -42,7 +40,7 @@ func (t *Trie) HasPrefix(s string) bool {
 	if len(s) == 0 {
 		return true
 	}
-	n := t.getNode([]rune(s)[0])
+	n := t.getNode(s[0])
 	if n == nil {
 		return false
 	}
@@ -58,7 +56,7 @@ func (t *Trie) HasString(s string) bool {
 	if len(s) == 0 {
 		return false
 	}
-	n := t.getNode([]rune(s)[0])
+	n := t.getNode(s[0])
 	if n == nil {
 		return false
 	}
@@ -80,8 +78,8 @@ func (t *Trie) substrings() []string {
 
 func (t *Trie) subtrie(s string) *Trie {
 	n := t
-	for i := 0; i < utf8.RuneCountInString(s); i++ {
-		n = n.getNode([]rune(s)[i])
+	for i := 0; i < len(s); i++ {
+		n = n.getNode(s[i])
 		if n == nil {
 			return nil
 		}
@@ -96,9 +94,40 @@ func (t *Trie) WithPrefix(s string) []string {
 		return t.substrings()
 	}
 	n := t.subtrie(s)
+	if n == nil {
+		return nil
+	}
 	var strs []string
 	for _, str := range n.substrings() {
 		strs = append(strs, s[:len(s)-1]+str)
 	}
 	return strs
+}
+
+// Matches returns all the entries in the trie which match the given byte list.
+// All the returned strings will have one character from bl[0] in the first
+// position, bl[1] in the second position, etc.
+func (t *Trie) Matches(bl [][]byte) []string {
+	var name string
+	if t.name > 0 {
+		// the 0 code point is ""
+		name = string(t.name)
+	}
+	if len(bl) == 0 && t.terminal {
+		return []string{name}
+	}
+	if len(bl) == 0 {
+		return nil
+	}
+	var rtn []string
+	for _, r := range bl[0] {
+		n := t.getNode(r)
+		if n == nil {
+			continue
+		}
+		for _, mat := range n.Matches(bl[1:]) {
+			rtn = append(rtn, name+mat)
+		}
+	}
+	return rtn
 }

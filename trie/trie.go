@@ -76,6 +76,16 @@ func (t *Trie) substrings() []string {
 	return strs
 }
 
+func (t *Trie) subbytes(soFar []byte, strs *[]string) {
+	soFar = append(soFar, t.name)
+	for _, n := range t.children {
+		n.subbytes(soFar, strs)
+	}
+	if t.terminal {
+		*strs = append(*strs, string(soFar))
+	}
+}
+
 func (t *Trie) subtrie(s string) *Trie {
 	n := t
 	for i := 0; i < len(s); i++ {
@@ -90,6 +100,23 @@ func (t *Trie) subtrie(s string) *Trie {
 // WithPrefix returns all entries in the trie that begin with the
 // given prefix.
 func (t *Trie) WithPrefix(s string) []string {
+	var strs []string
+	if len(s) == 0 {
+		t.subbytes([]byte{}, &strs)
+		return strs
+	}
+	n := t.subtrie(s)
+	if n == nil {
+		return nil
+	}
+	for _, n := range n.children {
+		n.subbytes([]byte(s), &strs)
+	}
+	return strs
+}
+
+// Previous WithPrefix, kept for benchmark purposes.
+func (t *Trie) oldWithPrefix(s string) []string {
 	if len(s) == 0 {
 		return t.substrings()
 	}

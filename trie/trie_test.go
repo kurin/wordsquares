@@ -1,6 +1,8 @@
 package trie
 
 import (
+	"bufio"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
@@ -119,5 +121,47 @@ func TestMatches(t *testing.T) {
 		if !reflect.DeepEqual(got, e.want) {
 			t.Errorf("tr.Matches(...): got %#v, want %#v", got, e.want)
 		}
+	}
+}
+
+func BenchmarkWithPrefixOld(b *testing.B) {
+	f, err := os.Open("/usr/share/dict/words")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer f.Close()
+
+	tr := &Trie{}
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		tr.Add(scanner.Text())
+	}
+	if scanner.Err() != nil {
+		b.Fatal(scanner.Err())
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tr.oldWithPrefix("th")
+	}
+}
+
+func BenchmarkWithPrefix(b *testing.B) {
+	f, err := os.Open("/usr/share/dict/words")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer f.Close()
+
+	tr := &Trie{}
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		tr.Add(scanner.Text())
+	}
+	if scanner.Err() != nil {
+		b.Fatal(scanner.Err())
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tr.WithPrefix("th")
 	}
 }

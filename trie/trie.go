@@ -131,10 +131,40 @@ func (t *Trie) oldWithPrefix(s string) []string {
 	return strs
 }
 
+func (t *Trie) matchBytes(bl [][]byte, c []byte, mat *[]string) {
+	if t.name > 0 {
+		// 0 is ""
+		c = append(c, t.name)
+	}
+	if len(bl) == 0 {
+		if t.terminal {
+			*mat = append(*mat, string(c))
+		}
+		return
+	}
+	for _, r := range bl[0] {
+		n := t.getNode(r)
+		if n == nil {
+			continue
+		}
+		n.matchBytes(bl[1:], c, mat)
+	}
+}
+
 // Matches returns all the entries in the trie which match the given byte list.
 // All the returned strings will have one character from bl[0] in the first
 // position, bl[1] in the second position, etc.
 func (t *Trie) Matches(bl [][]byte) []string {
+	if len(bl) == 0 {
+		return nil
+	}
+	var mat []string
+	t.matchBytes(bl, []byte{}, &mat)
+	return mat
+}
+
+// kept for benchmark
+func (t *Trie) oldMatches(bl [][]byte) []string {
 	var name string
 	if t.name > 0 {
 		// the 0 code point is ""

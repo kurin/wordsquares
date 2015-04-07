@@ -165,3 +165,59 @@ func BenchmarkWithPrefix(b *testing.B) {
 		tr.WithPrefix("th")
 	}
 }
+
+func BenchmarkMatchesOld(b *testing.B) {
+	f, err := os.Open("/usr/share/dict/words")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer f.Close()
+
+	tr := &Trie{}
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		tr.Add(scanner.Text())
+	}
+	if scanner.Err() != nil {
+		b.Fatal(scanner.Err())
+	}
+	m := [][]byte{
+		{'t', 'r'},
+		{'r', 'h', 'a', 'i'},
+		{'a', 'i', 'u'},
+		{'t', 'n', 'i'},
+		{'n', 's', 'h'},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tr.oldMatches(m)
+	}
+}
+
+func BenchmarkMatches(b *testing.B) {
+	f, err := os.Open("/usr/share/dict/words")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer f.Close()
+
+	tr := &Trie{}
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		tr.Add(scanner.Text())
+	}
+	if scanner.Err() != nil {
+		b.Fatal(scanner.Err())
+	}
+	m := [][]byte{
+		{'t', 'r'},
+		{'r', 'h', 'a', 'i'},
+		{'a', 'i', 'u'},
+		{'t', 'n', 'i'},
+		{'n', 's', 'h'},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tr.Matches(m)
+	}
+}

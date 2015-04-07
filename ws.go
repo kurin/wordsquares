@@ -150,6 +150,7 @@ func main() {
 	}
 
 	if *word != "" {
+		t.Add(*word)
 		wl = []string{*word}
 	}
 

@@ -12,5 +12,12 @@ This code finds word squares, which are squares of words:
 
 Note that the first row is also the first column, etc.
 
-It's pretty quick.  There aren't any squares with words longer than 7
-characters, in my dictionary at least.
+It also creates double word squares:
+
+    slobs
+    tiara
+    attar
+    these
+    sense
+
+Note that the first row is not the first column.

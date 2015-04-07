@@ -5,6 +5,7 @@ type Trie struct {
 	name     byte
 	terminal bool
 	children []*Trie
+	pfxMap   map[string][]string
 }
 
 func (t *Trie) getNode(c byte) *Trie {
@@ -100,9 +101,16 @@ func (t *Trie) subtrie(s string) *Trie {
 // WithPrefix returns all entries in the trie that begin with the
 // given prefix.
 func (t *Trie) WithPrefix(s string) []string {
+	if t.pfxMap == nil {
+		t.pfxMap = make(map[string][]string)
+	}
+	if m, ok := t.pfxMap[s]; ok {
+		return m
+	}
 	var strs []string
 	if len(s) == 0 {
 		t.subbytes([]byte{}, &strs)
+		t.pfxMap[s] = strs
 		return strs
 	}
 	n := t.subtrie(s)
@@ -112,6 +120,7 @@ func (t *Trie) WithPrefix(s string) []string {
 	for _, n := range n.children {
 		n.subbytes([]byte(s), &strs)
 	}
+	t.pfxMap[s] = strs
 	return strs
 }
 
